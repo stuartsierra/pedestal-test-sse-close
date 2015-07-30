@@ -16,24 +16,20 @@
             [io.pedestal.http.route :as route]
             [io.pedestal.http.route.definition :refer [defroutes]]
             [ring.util.response :as ring-resp]
-            [clojure.core.async :as async]))
+            [clojure.core.async :as async]
+            [clojure.tools.logging :as log]
+            [clojure.core.async.impl.protocols]))
 
 (defn send-counter
-  "Counts down to 0, sending value of counter to sse context and
-  recursing on a different thread; ends event stream when counter
-  is 0."
-  [event-ch count-num]
-  ;; This is how you set a specific event name for the client to listen for
-  (async/put! event-ch {:name "count"
-                        :data (str count-num ", thread: " (.getId (Thread/currentThread)))})
-  ;; If you just want the client to receive messages on the "message" event, just pass the data string
-  ;(async/put! event-ch (str count-num ", thread: " (.getId (Thread/currentThread))))
-  (Thread/sleep 1500)
-  (if (> count-num 0)
-    (recur event-ch (dec count-num))
-    (do
-      (async/put! event-ch {:name "close" :data ""})
-      (async/close! event-ch))))
+  "Counts up from 0, sending value of counter to sse context. Ends
+  when event channel is closed."
+  [event-ch]
+  (loop [counter 0]
+    (log/info "event-ch closed?" (clojure.core.async.impl.protocols/closed? event-ch))
+    (when (async/>!! event-ch {:name "count"
+                               :data (str counter ", thread: " (.getId (Thread/currentThread)))})
+      (Thread/sleep 1500)
+      (recur (inc counter)))))
 
 (defn sse-stream-ready
   "Starts sending counter events to client."
@@ -44,7 +40,7 @@
   ;; you ever need low-level control over the SSE events.  It's advised that
   ;; that you never use this channel unless you know what you're doing.
   (let [{:keys [request response-channel]} ctx]
-    (send-counter event-ch 10)))
+    (send-counter event-ch)))
 
 (defn about-page
   [request]
