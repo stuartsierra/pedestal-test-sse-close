@@ -31,13 +31,13 @@
 
                  ;; Example CLJS client
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [org.clojure/clojurescript "0.0-2341"]]
+                 [org.clojure/clojurescript "0.0-2341"]
+                 [org.clojure/tools.logging "0.3.1"]]
   :plugins [[lein-cljsbuild "1.0.3"]]
   :min-lein-version "2.0.0"
   :resource-paths ["resources" "config"]
   :global-vars  {*warn-on-reflection* true
                  *assert* true}
-  :pedantic? :abort
   :main ^{:skip-aot true} server-sent-events.server
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "server-sent-events.server/run-dev"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.3.1"]]
